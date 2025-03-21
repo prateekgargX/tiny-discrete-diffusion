@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import random
 from torchvision.utils import make_grid
 import torchvision
 from torchvision import transforms
@@ -24,6 +25,18 @@ def viz_masked_images(images, masks, nrow=8, color = (1,0,0)):
     plt.imshow(make_grid(images, nrow=nrow).permute(1, 2, 0))
     plt.axis('off')
     plt.show()
+
+def set_seed(seed):
+    # https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial3/Activation_Functions.html
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available(): # GPU operation have separate seed
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    random.seed(seed)
 
 def viz_images(ax, images, nrow=8):
     ax.imshow(make_grid(images, nrow=nrow).permute(1, 2, 0))
@@ -93,3 +106,13 @@ def load_tokenized_mnist(n_tokens, resolution, mode='uniform'):
 
 def tok2img(tokens, resolution, n_channels=1):
     return tokens.reshape(tokens.shape[0], n_channels, resolution, resolution)
+
+def multinomial_sample(prob_tensor):
+    """
+        prob_tensor is assumed to be (..., n) tensor
+        returns a tensor of indices of shape ... that are sampled from multinomial
+    """
+    n = prob_tensor.shape[-1]
+    remaining_shape = prob_tensor.shape[:-1]
+    flat_samples = torch.multinomial(prob_tensor.reshape(-1, n), 1).squeeze(-1)
+    return flat_samples.reshape(remaining_shape)
