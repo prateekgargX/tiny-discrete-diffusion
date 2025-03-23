@@ -145,19 +145,23 @@ def compute_loss(x, model, masking_sch, device):
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using {device} device")
-model = Unmasker(N_TOKENS + 1, embed_dim=32, num_heads=8, num_layers=8, hidden_dim=16, dropout=0.3, n_dim = RESOLUTION**2).to(device)
-# model = Unmasker(N_TOKENS + 1, embed_dim=64, num_heads=8, num_layers=16, hidden_dim=62, dropout=0.3, n_dim = RESOLUTION**2).to(device)
+# model = Unmasker(N_TOKENS + 1, embed_dim=32, num_heads=8, num_layers=8, hidden_dim=16, dropout=0.3, n_dim = RESOLUTION**2).to(device)
+model = Unmasker(N_TOKENS + 1, embed_dim=64, num_heads=8, num_layers=16, hidden_dim=32, dropout=0.1, n_dim = RESOLUTION**2).to(device)
+print(utils.print_params(model))
+
 masking_sch = MaskingScheduler()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-N_EPOCHS = 800 #400
-BATCH_SIZE = 2048 #1024
+N_EPOCHS = 1600 * 2 + 800 #400
+BATCH_SIZE = 4096 * 2 #1024
 train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_tokens), batch_size=BATCH_SIZE, shuffle=True)
 test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(test_tokens), batch_size=BATCH_SIZE, shuffle=False)
 losses = {
     "train": [],
     "test" : []
 }
+import time
 for epoch in range(N_EPOCHS):
+    start_time = time.time()
     model.train()
     epoch_train_loss = 0 
     batch_count = 0
@@ -170,15 +174,15 @@ for epoch in range(N_EPOCHS):
 
         epoch_train_loss += loss.item() * len(tokens)
         batch_count += len(tokens)
-
+    interim_time = time.time()
     losses["train"].append(epoch_train_loss / batch_count)
     epoch_test_loss = 0
     test_batch_count = 0
     eval_every_epoch = 1
     if epoch % eval_every_epoch == 0:
         with torch.no_grad():
-            os.makedirs('saved_models', exist_ok=True)
-            torch.save(model.state_dict(), f"saved_models/unmasker_{N_TOKENS}_{RESOLUTION}x{RESOLUTION}.pt")
+            os.makedirs('saved_models/m2', exist_ok=True)
+            torch.save(model.state_dict(), f"saved_models/m2/unmasker_{N_TOKENS}_{RESOLUTION}x{RESOLUTION}.pt")
             model.eval()
             for i, (tokens,) in enumerate(test_loader):
                 tokens = tokens.to(device)
@@ -186,13 +190,14 @@ for epoch in range(N_EPOCHS):
                 epoch_test_loss += loss.item() * len(tokens)
                 test_batch_count += len(tokens)
             losses["test"].append(epoch_test_loss / test_batch_count)
-    print(f"Epoch {epoch: 03}, Train {losses['train'][-1]:.03f}, Test {losses['test'][-1]:.03f}")
+    end_time = time.time()
+    print(f"Epoch {epoch: 03}, Train {losses['train'][-1]:.03f}, Test {losses['test'][-1]:.03f}, Time {end_time - start_time:.03f}, Train Time {interim_time - start_time:.03f}, Test Time {end_time - interim_time:.03f}")
 
 
         # Save losses
 torch.save(losses, 'saved_models/losses.pt')
 # Save the final model
-torch.save(model.state_dict(), f"saved_models/final_unmasker_{N_TOKENS}_{RESOLUTION}x{RESOLUTION}.pt")
+torch.save(model.state_dict(), f"saved_models/m2/final_unmasker_{N_TOKENS}_{RESOLUTION}x{RESOLUTION}.pt")
 
 
 

@@ -1,3 +1,4 @@
+import math
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -116,3 +117,16 @@ def multinomial_sample(prob_tensor):
     remaining_shape = prob_tensor.shape[:-1]
     flat_samples = torch.multinomial(prob_tensor.reshape(-1, n), 1).squeeze(-1)
     return flat_samples.reshape(remaining_shape)
+
+
+def millify(n):
+    millnames = ['',' K',' M',' B',' T']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+    return f'{n / 10**(3 * millidx):.0f}{millnames[millidx]}'
+
+def print_params(model):
+    pytorch_total_params = sum(p.numel() for p in model.parameters())
+    pytorch_total_params_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return f"Total params: {millify(pytorch_total_params)}, Trainable params: {millify(pytorch_total_params_trainable)}"
