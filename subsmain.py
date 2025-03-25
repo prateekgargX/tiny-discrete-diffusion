@@ -195,7 +195,7 @@ for epoch in range(N_EPOCHS):
 
 
         # Save losses
-torch.save(losses, 'saved_models/losses.pt')
+torch.save(losses, 'saved_models/m2/losses.pt')
 # Save the final model
 torch.save(model.state_dict(), f"saved_models/m2/final_unmasker_{N_TOKENS}_{RESOLUTION}x{RESOLUTION}.pt")
 
