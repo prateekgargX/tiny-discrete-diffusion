@@ -48,6 +48,7 @@ def rand_partition(n=100):
     """
     - Generate a random partition of the interval [0, 1] into n intervals.
     - Uniformly samples from the simplex
+    - batched version also possible but not implemented
     """
     cumulative_fracs = np.sort(np.concatenate([np.random.rand(n-1), [1]])) 
     cumulative_fracs[1:] = cumulative_fracs[1:] - cumulative_fracs[:-1]
